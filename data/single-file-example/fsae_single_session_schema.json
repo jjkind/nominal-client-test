@@ -1,0 +1,161 @@
+{
+  "file": "fsae_single_session.bin",
+  "description": "Synthetic Formula SAE electric race car telemetry: one session file, multiple logical channels.",
+  "endianness": "little",
+  "header": {
+    "format": "<4sHHIQHH",
+    "fields": [
+      {
+        "name": "magic",
+        "type": "char[4]",
+        "expected": "FSAE"
+      },
+      {
+        "name": "version",
+        "type": "uint16",
+        "value": 1
+      },
+      {
+        "name": "header_size",
+        "type": "uint16",
+        "value": 24
+      },
+      {
+        "name": "session_id",
+        "type": "uint32",
+        "value": 20260613
+      },
+      {
+        "name": "start_time_unix_ms",
+        "type": "uint64",
+        "value": 1781366400000
+      },
+      {
+        "name": "channel_count",
+        "type": "uint16",
+        "value": 4
+      },
+      {
+        "name": "reserved",
+        "type": "uint16",
+        "value": 0
+      }
+    ]
+  },
+  "packet": {
+    "format": "<IHH + payload",
+    "fields": [
+      {
+        "name": "timestamp_ms",
+        "type": "uint32",
+        "description": "Milliseconds from session start"
+      },
+      {
+        "name": "channel_id",
+        "type": "uint16"
+      },
+      {
+        "name": "payload_len",
+        "type": "uint16"
+      },
+      {
+        "name": "payload",
+        "type": "bytes",
+        "description": "Decoded by channel_id"
+      }
+    ]
+  },
+  "channels": {
+    "1": {
+      "name": "battery",
+      "format": "<ffffHBB",
+      "fields": [
+        "pack_voltage_v",
+        "pack_current_a",
+        "soc_pct",
+        "max_cell_temp_c",
+        "min_cell_mv",
+        "contactor_state",
+        "fault_flags"
+      ],
+      "units": {
+        "pack_voltage_v": "V",
+        "pack_current_a": "A",
+        "soc_pct": "%",
+        "max_cell_temp_c": "degC",
+        "min_cell_mv": "mV",
+        "contactor_state": "enum",
+        "fault_flags": "bitfield"
+      },
+      "rate_hz": 10
+    },
+    "2": {
+      "name": "motor",
+      "format": "<ffffHH",
+      "fields": [
+        "motor_rpm",
+        "torque_cmd_nm",
+        "torque_actual_nm",
+        "inverter_temp_c",
+        "dc_bus_v",
+        "fault_flags"
+      ],
+      "units": {
+        "motor_rpm": "rpm",
+        "torque_cmd_nm": "Nm",
+        "torque_actual_nm": "Nm",
+        "inverter_temp_c": "degC",
+        "dc_bus_v": "V",
+        "fault_flags": "bitfield"
+      },
+      "rate_hz": 50
+    },
+    "3": {
+      "name": "pedals",
+      "format": "<fffBB",
+      "fields": [
+        "accel_pedal_pct",
+        "brake_front_psi",
+        "brake_rear_psi",
+        "drive_mode",
+        "plausibility_fault"
+      ],
+      "units": {
+        "accel_pedal_pct": "%",
+        "brake_front_psi": "psi",
+        "brake_rear_psi": "psi",
+        "drive_mode": "enum",
+        "plausibility_fault": "bool"
+      },
+      "rate_hz": 100
+    },
+    "4": {
+      "name": "vehicle_dynamics",
+      "format": "<fffffff",
+      "fields": [
+        "vehicle_speed_mps",
+        "steering_deg",
+        "yaw_rate_dps",
+        "lat_g",
+        "long_g",
+        "wheel_fl_mps",
+        "wheel_fr_mps"
+      ],
+      "units": {
+        "vehicle_speed_mps": "m/s",
+        "steering_deg": "deg",
+        "yaw_rate_dps": "deg/s",
+        "lat_g": "g",
+        "long_g": "g",
+        "wheel_fl_mps": "m/s",
+        "wheel_fr_mps": "m/s"
+      },
+      "rate_hz": 100
+    }
+  },
+  "notes": [
+    "This is not an official Formula SAE or Nominal binary format.",
+    "It models the standard telemetry pattern: one run/session file containing interleaved packets from multiple channels.",
+    "Use the schema and decoder to map channel payloads into rows, CSV, or SDK timeseries points."
+  ]
+}
