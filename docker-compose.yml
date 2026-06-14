@@ -18,3 +18,13 @@ services:
       - .env
     depends_on:
       - web
+
+  exporter-loki:
+    build:
+      context: ./services/exporter-loki
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    depends_on:
+      - parser

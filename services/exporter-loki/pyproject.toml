@@ -1,0 +1,15 @@
+[project]
+name = "fsae-exporter-loki"
+version = "0.1.0"
+description = "Loki exporter service for normalized Formula SAE telemetry records."
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.32.0",
+]
+
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/loki_exporter"]
