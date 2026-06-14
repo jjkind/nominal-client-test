@@ -8,3 +8,13 @@ services:
       - ./data:/app/data
     env_file:
       - .env
+
+  parser:
+    build:
+      context: ./services/parser
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    depends_on:
+      - web
