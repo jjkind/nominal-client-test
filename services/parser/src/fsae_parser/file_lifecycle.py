@@ -1,5 +1,13 @@
+"""
+Purpose:
+Manages the local file lifecycle for uploaded telemetry files.
+
+This module owns the shared data folder locations and provides helper methods
+for moving files through uploaded, processing, normalized, processed, and failed
+states.
+"""
+
 from pathlib import Path
-import shutil
 
 
 class FileLifecycle:
@@ -7,6 +15,7 @@ class FileLifecycle:
         self.data_root = data_root
         self.uploaded_dir = data_root / "uploaded"
         self.processing_dir = data_root / "processing"
+        self.normalized_dir = data_root / "normalized"
         self.processed_dir = data_root / "processed"
         self.failed_dir = data_root / "failed"
 
@@ -14,6 +23,7 @@ class FileLifecycle:
         for directory in [
             self.uploaded_dir,
             self.processing_dir,
+            self.normalized_dir,
             self.processed_dir,
             self.failed_dir,
         ]:
@@ -43,3 +53,6 @@ class FileLifecycle:
     def move_to_failed(self, source_path: Path) -> Path:
         destination_path = self.failed_dir / source_path.name
         return source_path.rename(destination_path)
+
+    def normalized_output_path_for(self, source_path: Path) -> Path:
+        return self.normalized_dir / f"{source_path.stem}.jsonl"

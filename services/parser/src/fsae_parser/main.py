@@ -1,7 +1,15 @@
+"""
+Purpose:
+Entrypoint for the parser container.
+
+This module reads the parser service configuration, creates the file watcher,
+and starts the long-running parser worker process.
+"""
+
 from pathlib import Path
 import os
 
-from .file_watcher import FileWatcher
+from fsae_parser.file_watcher import FileWatcher
 
 
 def main() -> None:
