@@ -9,10 +9,11 @@ data/export_status/loki/.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 import json
 from pathlib import Path
 import time
-from typing import Iterator
+from typing import Any
 
 from .config import LokiExporterConfig
 from .loki_client import LokiClient
@@ -21,7 +22,6 @@ from .loki_client import LokiClient
 class LokiExportWorker:
     def __init__(self, config: LokiExporterConfig) -> None:
         self.config = config
-
         self.normalized_dir = config.data_root / "normalized"
         self.exported_dir = config.data_root / "export_status" / "loki" / "exported"
         self.failed_dir = config.data_root / "export_status" / "loki" / "failed"
@@ -64,8 +64,6 @@ class LokiExportWorker:
         )
 
     def export_file(self, path: Path) -> None:
-        print(f"Exporting normalized file to Loki: {path.name}", flush=True)
-
         try:
             exported_count = 0
 
@@ -91,11 +89,17 @@ class LokiExportWorker:
                 content=f"error={exc}\n",
             )
 
-            print(f"Failed to export {path.name} to Loki: {exc}", flush=True)
+            print(
+                f"Failed to export {path.name} to Loki: {exc}",
+                flush=True,
+            )
 
     @staticmethod
-    def _read_jsonl_batches(path: Path, batch_size: int) -> Iterator[list[dict]]:
-        batch: list[dict] = []
+    def _read_jsonl_batches(
+        path: Path,
+        batch_size: int,
+    ) -> Iterator[list[dict[str, Any]]]:
+        batch: list[dict[str, Any]] = []
 
         with path.open("r", encoding="utf-8") as file:
             for line in file:
