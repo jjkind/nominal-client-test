@@ -144,6 +144,8 @@ class LokiClient:
             label_key = tuple(sorted(labels.items()))
 
             log_body = {
+                "timestamp_iso": record.get("timestamp_iso"),
+                "timestamp_ns": record.get("timestamp_ns"),
                 "channel": record["channel"],
                 "value": record["value"],
                 "units": record["units"],

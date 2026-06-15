@@ -9,6 +9,7 @@ normalizer expands each packet into one record per telemetry channel value.
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
+from datetime import datetime, timezone
 
 from fsae_parser.models import ParsedPacket, TelemetryRecord, TelemetryValue
 
@@ -66,6 +67,8 @@ class TelemetryNormalizer:
             timestamp_ms=packet.timestamp_ms,
         )
 
+        timestamp_iso = self._to_iso8601_utc(timestamp_ns)
+
         records: list[TelemetryRecord] = []
 
         for raw_channel, raw_value in packet.values.items():
@@ -74,6 +77,7 @@ class TelemetryNormalizer:
             records.append(
                 TelemetryRecord(
                     timestamp_ns=timestamp_ns,
+                    timestamp_iso=timestamp_iso,
                     session_id=packet.session_id,
                     car=self.car,
                     subsystem=packet.subsystem,
@@ -96,6 +100,25 @@ class TelemetryNormalizer:
     @staticmethod
     def _to_epoch_ns(session_start_unix_ms: int, timestamp_ms: int) -> int:
         return (session_start_unix_ms + timestamp_ms) * 1_000_000
+
+    @staticmethod
+    def _to_iso8601_utc(timestamp_ns: int) -> str:
+        """
+        Convert Unix epoch nanoseconds to an ISO-8601 UTC timestamp.
+
+        Example:
+            1781366400000000000
+            -> 2026-06-13T16:00:00.000000000Z
+
+        Python datetime stores microseconds, so the nanosecond portion is
+        formatted manually.
+        """
+        seconds = timestamp_ns // 1_000_000_000
+        nanoseconds = timestamp_ns % 1_000_000_000
+
+        dt = datetime.fromtimestamp(seconds, tz=timezone.utc)
+
+        return f"{dt.strftime('%Y-%m-%dT%H:%M:%S')}.{nanoseconds:09d}Z"
 
     @staticmethod
     def _normalize_channel_name(raw_channel: str) -> str:

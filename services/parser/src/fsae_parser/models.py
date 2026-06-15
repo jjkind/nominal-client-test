@@ -39,11 +39,12 @@ class TelemetryRecord:
     """
     Backend-neutral normalized telemetry record.
 
-    Loki, Nominal, and Elasticsearch exporters should eventually consume this
-    format instead of consuming binary parser structures directly.
+    timestamp_ns is the machine-friendly Unix epoch timestamp in nanoseconds.
+    timestamp_iso is the human-friendly ISO-8601 UTC timestamp.
     """
 
     timestamp_ns: int
+    timestamp_iso: str
     session_id: str
     car: str
     subsystem: str
