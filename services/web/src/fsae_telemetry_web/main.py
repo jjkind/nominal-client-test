@@ -200,3 +200,4 @@ def status_page() -> str:
         </p>
       </body>
     </html>
+    """
