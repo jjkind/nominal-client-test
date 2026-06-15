@@ -3,7 +3,10 @@ name = "fsae-parser"
 version = "0.1.0"
 description = "Parser service for Formula SAE telemetry files."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pandas>=2.2.0",
+    "pyarrow>=16.0.0",
+]
 
 [build-system]
 requires = ["hatchling>=1.25.0"]
