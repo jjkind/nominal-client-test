@@ -58,8 +58,19 @@ def upload_page() -> str:
 
         <form action="/upload" enctype="multipart/form-data" method="post">
           <p>
-            <label for="file">Telemetry file</label><br>
+            <label for="file">Telemetry binary file</label><br>
             <input id="file" name="file" type="file" required>
+          </p>
+
+          <p>
+            <label for="schema_file">Binary schema JSON file</label><br>
+            <input
+              id="schema_file"
+              name="schema_file"
+              type="file"
+              accept=".json,application/json"
+              required
+            >
           </p>
 
           <p>
@@ -85,12 +96,16 @@ def upload_page() -> str:
 @app.post("/upload")
 def upload_file(
     file: UploadFile = File(...),
+    schema_file: UploadFile = File(...),
     output_format: str = Form("jsonl"),
 ) -> RedirectResponse:
     ensure_data_dirs()
 
     if not file.filename:
-        raise HTTPException(status_code=400, detail="No file name provided.")
+        raise HTTPException(status_code=400, detail="No telemetry file name provided.")
+
+    if not schema_file.filename:
+        raise HTTPException(status_code=400, detail="No schema file name provided.")
 
     if output_format not in VALID_OUTPUT_FORMATS:
         raise HTTPException(
@@ -102,10 +117,17 @@ def upload_file(
         )
 
     original_name = Path(file.filename).name
+    original_schema_name = Path(schema_file.filename).name
+
     unique_name = f"{uuid4().hex}_{original_name}"
+    schema_unique_name = f"{unique_name}.schema.json"
 
     temp_path = UPLOADED_DIR / f"{unique_name}.tmp"
     final_path = UPLOADED_DIR / unique_name
+
+    schema_temp_path = UPLOADED_DIR / f"{schema_unique_name}.tmp"
+    schema_final_path = UPLOADED_DIR / schema_unique_name
+
     metadata_temp_path = UPLOADED_DIR / f"{unique_name}.metadata.json.tmp"
     metadata_final_path = UPLOADED_DIR / f"{unique_name}.metadata.json"
 
@@ -113,30 +135,48 @@ def upload_file(
         with temp_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
+        with schema_temp_path.open("wb") as buffer:
+            shutil.copyfileobj(schema_file.file, buffer)
+
         metadata = {
             "original_filename": original_name,
             "stored_filename": unique_name,
+            "original_schema_filename": original_schema_name,
+            "schema_filename": schema_unique_name,
             "output_format": output_format,
         }
+
         metadata_temp_path.write_text(
             json.dumps(metadata, indent=2) + "\n",
             encoding="utf-8",
         )
 
-        # Write metadata first and rename the uploaded file last.
-        # The parser only watches for telemetry files, so this prevents it from
-        # seeing a ready file before its metadata sidecar exists.
+        # Important ordering:
+        # 1. Make schema visible.
+        # 2. Make metadata visible.
+        # 3. Make binary visible last.
+        #
+        # The parser watches for telemetry files. Renaming the binary last
+        # prevents the parser from seeing the binary before its sidecars exist.
+        schema_temp_path.rename(schema_final_path)
         metadata_temp_path.rename(metadata_final_path)
         temp_path.rename(final_path)
 
     except Exception as exc:
-        for path in [temp_path, final_path, metadata_temp_path, metadata_final_path]:
+        for path in [
+            temp_path,
+            final_path,
+            schema_temp_path,
+            schema_final_path,
+            metadata_temp_path,
+            metadata_final_path,
+        ]:
             if path.exists():
                 path.unlink()
 
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to save uploaded file: {exc}",
+            detail=f"Failed to save uploaded files: {exc}",
         ) from exc
 
     return RedirectResponse(url="/status", status_code=303)
@@ -166,6 +206,7 @@ def status_page() -> str:
                     and not path.name.startswith(".")
                     and not path.name.endswith(".tmp")
                     and not path.name.endswith(".metadata.json")
+                    and not path.name.endswith(".schema.json")
                 )
             ]
         )
